@@ -4,10 +4,9 @@ if [ -z "$APP" ] ; then
   echo "Please precise the application to apply using APP=."
 fi
 
-for js in `find apps/$APP/js -name '*.js'` ; do
+for js in `find apps/$APP/js shared -name '*.js'` ; do
   awk -v file="$(basename $js)" '
     BEGIN {
-      print "------" file > "/dev/stderr"
       print "console.time(\"" file "\");"
       nested = 0;
     }
@@ -17,22 +16,18 @@ for js in `find apps/$APP/js -name '*.js'` ; do
     }
 
     /init:\s*function/ {
-      print "in init" $0 > "/dev/stderr"
       inInit = 1
       inInitFirstLine = 1
-      print "in init" inInit inInitFirstLine > "/dev/stderr"
     }
 
     /{/ {
       if (inInit) {
-        print "nested++" $0 > "/dev/stderr"
         nested++
       }
     }
 
     /}/ {
       if (inInit) {
-        print "nested--" $0 > "/dev/stderr"
         nested--
         if (!nested) {
           print "console.timeEnd(\"" file ": init\");"
@@ -42,7 +37,6 @@ for js in `find apps/$APP/js -name '*.js'` ; do
     }
 
     {
-      print "normal" inInit $0 > "/dev/stderr"
       print
       if (inInitFirstLine) {
         print "console.time(\"" file ": init\");"
